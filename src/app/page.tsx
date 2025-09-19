@@ -28,12 +28,18 @@ export default function Home() {
             </li>
           </ol>
           
-          <div className="mt-4">
+          <div className="flex gap-2 mt-4 flex-wrap">
             <Link 
               href="/docs"
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors text-sm"
             >
               View Offline Documentation
+            </Link>
+            <Link 
+              href="/invoice-test"
+              className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors text-sm"
+            >
+              Test Dynamic Invoices
             </Link>
           </div>
         </div>
