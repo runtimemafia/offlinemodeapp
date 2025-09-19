@@ -123,15 +123,67 @@ self.addEventListener('fetch', (event) => {
             });
           return response;
         })
-        .catch(async () => {
+        .catch(async (error) => {
           // Try to get from cache
           const cachedResponse = await caches.match(event.request);
           if (cachedResponse) {
             return cachedResponse;
           }
           
-          // Fallback to offline page for all navigation requests
-          return caches.match(OFFLINE_URL);
+          // Special case: if user is trying to navigate to the offline page itself
+          if (event.request.url.endsWith('/offline')) {
+            const offlinePage = await caches.match('/offline');
+            if (offlinePage) {
+              return offlinePage;
+            }
+            // If offline page is not cached, return a basic offline response
+            return new Response(`
+              <!DOCTYPE html>
+              <html>
+              <head>
+                <title>Offline</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1">
+              </head>
+              <body>
+                <div style="text-align: center; padding: 50px;">
+                  <h1>You are offline</h1>
+                  <p>The offline page is not available. Please reconnect to access the app.</p>
+                  <button onclick="window.location.reload()">Retry</button>
+                </div>
+              </body>
+              </html>
+            `, {
+              headers: { 'Content-Type': 'text/html' }
+            });
+          }
+          
+          // For all other navigation requests when offline, redirect to the offline page
+          const offlinePage = await caches.match(OFFLINE_URL);
+          if (offlinePage) {
+            return offlinePage;
+          }
+          
+          // If offline page is not cached, return a basic offline response
+          return new Response(`
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <title>Offline</title>
+              <meta charset="utf-8">
+              <meta name="viewport" content="width=device-width, initial-scale=1">
+            </head>
+            <body>
+              <div style="text-align: center; padding: 50px;">
+                <h1>You are offline</h1>
+                <p>This page is not available without an internet connection.</p>
+                <p><a href="/">Go to homepage</a></p>
+              </div>
+            </body>
+            </html>
+          `, {
+            headers: { 'Content-Type': 'text/html' }
+          });
         })
     );
     return;

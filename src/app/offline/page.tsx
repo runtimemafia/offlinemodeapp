@@ -23,6 +23,19 @@ export default function OfflinePage() {
     };
   }, []);
 
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    // If we're offline and trying to navigate to another page, 
+    // prevent default navigation and show a message
+    if (!navigator.onLine && href !== '/') {
+      e.preventDefault();
+      alert('You are currently offline. Please reconnect to access other pages.');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex flex-col">
       {/* Header */}
@@ -71,25 +84,33 @@ export default function OfflinePage() {
               />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">You{`'`}re Offline</h1>
+          <h1 className="text-2xl font-bold text-gray-800 mb-2">You{'`'}re Offline</h1>
           <p className="text-gray-600 mb-6">
             This page is not available without an internet connection. 
             Please check your connection and try again.
           </p>
           <div className="flex flex-col gap-3">
             <button 
-              onClick={() => window.location.reload()}
+              onClick={handleRetry}
               className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
             >
               Retry Connection
             </button>
             <Link 
               href="/"
+              onClick={(e) => handleNavigation(e, '/')}
               className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
             >
               Go to Home
             </Link>
           </div>
+          
+          {!isOnline && (
+            <div className="mt-6 p-3 bg-yellow-100 text-yellow-800 rounded-md text-sm">
+              <p className="font-medium">Offline Mode</p>
+              <p>Some pages may not be accessible while offline. Please reconnect to access all features.</p>
+            </div>
+          )}
         </div>
       </main>
 
