@@ -2,11 +2,13 @@
   "name": "offlinemode",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "node scripts/generate-asset-list.js && next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate-assets": "node scripts/generate-asset-list.js"
   },
   "dependencies": {
     "react": "19.1.0",

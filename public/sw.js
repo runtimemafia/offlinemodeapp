@@ -1,13 +1,10 @@
 // Service Worker for offline functionality
-const CACHE_NAME = 'offline-cache-v6';
+const CACHE_NAME = 'offline-cache-v9';
 const OFFLINE_URL = '/offline';
-const STATIC_ASSETS = [
-  '/',
-  '/offline',
-  '/docs',
-  '/favicon.ico',
-  '/manifest',
-];
+
+// Import the auto-generated asset list
+importScripts('/asset-list.js');
+const STATIC_ASSETS = ASSET_LIST;
 
 // Install event - cache essential files
 self.addEventListener('install', (event) => {
@@ -50,10 +47,31 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Handle messages from client
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'CLAIM_CLIENTS') {
+    self.clients.claim();
+  }
+  
+  // Handle caching of API data
+  if (event.data && event.data.type === 'CACHE_API_DATA') {
+    event.waitUntil(
+      caches.open(CACHE_NAME)
+        .then((cache) => {
+          const response = new Response(JSON.stringify(event.data.payload.data), {
+            headers: { 'Content-Type': 'application/json' }
+          });
+          return cache.put(event.data.payload.url, response);
+        })
+    );
+  }
+});
+
 // Fetch event - implement offline functionality
 self.addEventListener('fetch', (event) => {
-  // Skip cross-origin requests
-  if (!event.request.url.startsWith(self.location.origin)) {
+  // Skip cross-origin requests except for specific domains
+  if (!event.request.url.startsWith(self.location.origin) && 
+      !event.request.url.includes('devtunnel.970056.xyz')) {
     return;
   }
   
@@ -120,10 +138,33 @@ self.addEventListener('fetch', (event) => {
   }
   
   // For other requests (assets), try cache first, then network
+  // This will cache CSS, JS, images, and other assets as they are requested
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        return response || fetch(event.request);
+        // If we have a cached response, return it
+        if (response) {
+          return response;
+        }
+        
+        // Otherwise, fetch from network and cache the response
+        return fetch(event.request)
+          .then((networkResponse) => {
+            // Cache the response for future use
+            if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
+              const responseToCache = networkResponse.clone();
+              caches.open(CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+            }
+            return networkResponse;
+          })
+          .catch(() => {
+            // If network fails and we don't have a cache, return nothing for non-critical assets
+            // For critical assets, we might want to return a fallback
+            return null;
+          });
       })
   );
 });

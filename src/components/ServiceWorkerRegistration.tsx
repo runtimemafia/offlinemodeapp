@@ -40,6 +40,11 @@ export default function ServiceWorkerRegistration() {
               });
             }
           });
+          
+          // Claim clients immediately
+          if (registration.active) {
+            registration.active.postMessage({ type: 'CLAIM_CLIENTS' });
+          }
         } catch (error) {
           console.error('Service Worker registration failed:', error);
         }
